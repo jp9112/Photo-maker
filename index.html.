@@ -1,78 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Photo Marker</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; }
-    img { max-width: 100%; height: auto; display: block; margin: 10px auto; }
-    .button { margin: 10px; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-    .marked-photos { display: flex; flex-wrap: wrap; }
-    .marked-photo { margin: 5px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Flagging App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #imageContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .imageWrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .flagButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        img {
+            width: 150px;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+        #flaggedImages {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>Photo Marker</h2>
-  
-  <input type="file" accept="image/*" multiple onchange="loadPhotos(event)" class="button">
-  <div id="photoContainer"></div>
+<h2>Select and Flag Your Images</h2>
 
-  <h2>Marked Photos</h2>
-  <div id="markedPhotos" class="marked-photos"></div>
+<input type="file" id="fileInput" accept="image/*" multiple>
+<div id="imageContainer"></div>
 
-  <script>
-    const markedPhotos = JSON.parse(localStorage.getItem('markedPhotos')) || [];
+<button onclick="showFlaggedImages()">View Flagged Images</button>
 
-    function loadPhotos(event) {
-      const files = event.target.files;
-      const photoContainer = document.getElementById('photoContainer');
-      photoContainer.innerHTML = '';
-      
-      Array.from(files).forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const photoDiv = document.createElement('div');
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.alt = 'Photo ' + (index + 1);
-          const markButton = document.createElement('button');
-          markButton.textContent = 'Mark';
-          markButton.className = 'button';
-          markButton.onclick = () => markPhoto(e.target.result);
-          photoDiv.appendChild(img);
-          photoDiv.appendChild(markButton);
-          photoContainer.appendChild(photoDiv);
-        };
-        reader.readAsDataURL(file);
-      });
+<div id="flaggedImages">
+    <h3>Flagged Images</h3>
+    <div id="flaggedContainer"></div>
+</div>
+
+<script>
+    const imageContainer = document.getElementById('imageContainer');
+    const flaggedContainer = document.getElementById('flaggedContainer');
+    const flaggedImages = new Set();
+
+    document.getElementById('fileInput').addEventListener('change', (event) => {
+        const files = event.target.files;
+        imageContainer.innerHTML = ''; // Clear previous images
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('imageWrapper');
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = file.name;
+
+                const flagButton = document.createElement('button');
+                flagButton.innerText = "Flag";
+                flagButton.className = "flagButton";
+
+                // Toggle flag state
+                flagButton.addEventListener('click', () => {
+                    if (flaggedImages.has(img.src)) {
+                        flaggedImages.delete(img.src);
+                        flagButton.innerText = "Flag";
+                        flagButton.style.backgroundColor = "red";
+                    } else {
+                        flaggedImages.add(img.src);
+                        flagButton.innerText = "Unflag";
+                        flagButton.style.backgroundColor = "green";
+                    }
+                });
+
+                imgWrapper.appendChild(img);
+                imgWrapper.appendChild(flagButton);
+                imageContainer.appendChild(imgWrapper);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    function showFlaggedImages() {
+        flaggedContainer.innerHTML = ''; // Clear previous flagged images
+        document.getElementById('flaggedImages').style.display = 'block';
+
+        flaggedImages.forEach(src => {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = "Flagged Image";
+            flaggedContainer.appendChild(img);
+        });
     }
-
-    function markPhoto(photoSrc) {
-      if (!markedPhotos.includes(photoSrc)) {
-        markedPhotos.push(photoSrc);
-        localStorage.setItem('markedPhotos', JSON.stringify(markedPhotos));
-        displayMarkedPhotos();
-      }
-    }
-
-    function displayMarkedPhotos() {
-      const markedPhotosContainer = document.getElementById('markedPhotos');
-      markedPhotosContainer.innerHTML = '';
-      markedPhotos.forEach(photoSrc => {
-        const img = document.createElement('img');
-        img.src = photoSrc;
-        img.alt = 'Marked Photo';
-        img.className = 'marked-photo';
-        img.style.width = '100px';
-        markedPhotosContainer.appendChild(img);
-      });
-    }
-
-    // Display marked photos on load
-    displayMarkedPhotos();
-  </script>
+</script>
 
 </body>
 </html>
